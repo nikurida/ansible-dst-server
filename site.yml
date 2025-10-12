@@ -1,0 +1,7 @@
+- name: Provision Don't Starve Together server
+  hosts: dst
+  become: true
+  vars:
+    apt_noninteractive: "DEBIAN_FRONTEND=noninteractive"
+  roles:
+    - dst_server

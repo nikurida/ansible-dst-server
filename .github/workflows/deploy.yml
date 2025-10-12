@@ -1,0 +1,116 @@
+name: Deploy DST with Ansible
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+# prevent overlapping runs
+concurrency:
+  group: dst-deploy
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    name: Plan (Ansible dry-run)
+    runs-on: ubuntu-latest
+    env:
+      ANSIBLE_HOST: ${{ secrets.ANSIBLE_HOST }}
+      ANSIBLE_USER: ${{ secrets.ANSIBLE_USER }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+
+      - name: Start SSH agent and add key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -T 10 -H "${ANSIBLE_HOST}" >> ~/.ssh/known_hosts
+
+      - name: Write inventory.ini from secrets
+        run: |
+          cat > inventory.ini <<'EOF'
+          [dst]
+          dst-host ansible_host=${ANSIBLE_HOST} ansible_user=${ANSIBLE_USER}
+          EOF
+
+      - name: Write Vault password file
+        run: |
+          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault_pass.txt
+          chmod 600 .vault_pass.txt
+
+      - name: Ansible version
+        run: ansible --version
+
+      - name: Dry-run (check mode)
+        run: |
+          ansible-playbook -i inventory.ini site.yml \
+            --vault-password-file ./.vault_pass.txt \
+            --check --diff \
+            -e "ansible_python_interpreter=/usr/bin/python3"
+
+  deploy:
+    name: Deploy (apply)
+    runs-on: ubuntu-latest
+    needs: plan
+    environment: production   # environment protection/approval in GitHub
+    env:
+      ANSIBLE_HOST: ${{ secrets.ANSIBLE_HOST }}
+      ANSIBLE_USER: ${{ secrets.ANSIBLE_USER }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+
+      - name: Start SSH agent and add key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -T 10 -H "${ANSIBLE_HOST}" >> ~/.ssh/known_hosts
+
+      - name: Write inventory.ini from secrets
+        run: |
+          cat > inventory.ini <<'EOF'
+          [dst]
+          dst-host ansible_host=${ANSIBLE_HOST} ansible_user=${ANSIBLE_USER}
+          EOF
+
+      - name: Write Vault password file
+        run: |
+          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault_pass.txt
+          chmod 600 .vault_pass.txt
+
+      - name: Apply (run Ansible)
+        run: |
+          ansible-playbook -i inventory.ini site.yml \
+            --vault-password-file ./.vault_pass.txt \
+            -e "ansible_python_interpreter=/usr/bin/python3"

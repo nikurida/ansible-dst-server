@@ -1,0 +1,24 @@
+[GAMEPLAY]
+game_mode = survival
+max_players = {{ cluster_max_players }}
+pvp = {{ 'true' if cluster_pvp else 'false' }}
+pause_when_empty = true
+
+[NETWORK]
+cluster_name = {{ dst_cluster_name }}
+cluster_description = {{ dst_cluster_description }}
+cluster_intention = {{ dst_cluster_intention }}
+cluster_password = {{ dst_cluster_password }}
+lan_only_cluster = {{ 'true' if cluster_lan_only else 'false' }}
+offline_cluster = {{ 'true' if cluster_offline else 'false' }}
+tick_rate = 15
+
+[MISC]
+console_enabled = true
+
+[SHARD]
+shard_enabled = true
+bind_ip = 0.0.0.0
+master_ip = 127.0.0.1
+master_port = 10888
+cluster_key = defaultsecret

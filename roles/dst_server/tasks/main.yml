@@ -1,0 +1,171 @@
+- name: Enable multiverse repository and update APT
+  apt_repository:
+    repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} multiverse"
+    state: present
+  register: repo_added
+
+- name: Update and upgrade system packages
+  apt:
+    update_cache: true
+    upgrade: dist
+  when: repo_added is changed or true
+
+- name: Install dependencies
+  apt:
+    name:
+      - lib32gcc-s1
+      - lib32stdc++6
+      - curl
+      - unzip
+      - ca-certificates
+      - ufw
+      - tmux
+    state: present
+
+- name: Create dst user and directories
+  user:
+    name: "{{ dst_user }}"
+    home: "{{ dst_home }}"
+    shell: /bin/bash
+    create_home: true
+
+- name: Create base directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0755"
+  loop:
+    - "{{ steamcmd_dir }}"
+    - "{{ dst_install_dir }}"
+
+- name: Download SteamCMD
+  get_url:
+    url: https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
+    dest: /tmp/steamcmd_linux.tar.gz
+    mode: "0644"
+
+- name: Extract SteamCMD
+  unarchive:
+    src: /tmp/steamcmd_linux.tar.gz
+    dest: "{{ steamcmd_dir }}"
+    remote_src: true
+  notify: Fix permissions for SteamCMD
+
+- name: Install/Update DST dedicated server (App ID 343050)
+  become_user: "{{ dst_user }}"
+  shell: |
+    "{{ steamcmd_dir }}/steamcmd.sh" +login anonymous +force_install_dir "{{ dst_install_dir }}" +app_update 343050 validate +quit
+  args:
+    creates: "{{ dst_install_dir }}/bin"
+
+- name: Create Klei cluster structure
+  become_user: "{{ dst_user }}"
+  file:
+    path: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - Master
+    - Caves
+
+- name: Write cluster token
+  copy:
+    content: "{{ dst_token | trim }}"
+    dest: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/cluster_token.txt"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0600"
+
+- name: Generate cluster.ini
+  template:
+    src: cluster.ini.j2
+    dest: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/cluster.ini"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+
+- name: Generate server.ini (Master)
+  template:
+    src: server_master.ini.j2
+    dest: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Master/server.ini"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+
+- name: Generate server.ini (Caves)
+  template:
+    src: server_caves.ini.j2
+    dest: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Caves/server.ini"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+
+- name: Create dedicated_server_mods_setup.lua
+  template:
+    src: dedicated_server_mods_setup.lua.j2
+    dest: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/dedicated_server_mods_setup.lua"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+
+- name: Create modoverrides.lua (Master)
+  template:
+    src: modoverrides.lua.j2
+    dest: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Master/modoverrides.lua"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+  vars:
+    modoverrides_body: "{{ modoverrides_master }}"
+
+- name: Create modoverrides.lua (Caves)
+  template:
+    src: modoverrides.lua.j2
+    dest: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Caves/modoverrides.lua"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+  vars:
+    modoverrides_body: "{{ modoverrides_caves }}"
+
+- name: Deploy systemd service files
+  template:
+    src: "{{ item.src }}"
+    dest: "/etc/systemd/system/{{ item.dest }}"
+    mode: "0644"
+  loop:
+    - { src: "dst-master.service.j2", dest: "dst-master.service" }
+    - { src: "dst-caves.service.j2",  dest: "dst-caves.service" }
+  notify: Reload systemd
+
+- name: Enable and start DST services
+  systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - dst-master.service
+    - dst-caves.service
+
+- name: Configure UFW firewall
+  when: enable_ufw
+  block:
+    - name: Enable UFW
+      ufw:
+        state: enabled
+        policy: deny
+    - name: Allow SSH
+      ufw:
+        rule: allow
+        name: OpenSSH
+    - name: Allow DST UDP ports
+      ufw:
+        rule: allow
+        proto: udp
+        port: "{{ item }}"
+      loop:
+        - "{{ dst_master_port }}"
+        - "{{ dst_caves_port }}"
+        - "{{ dst_steam_query_port }}"

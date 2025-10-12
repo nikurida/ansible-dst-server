@@ -1,0 +1,17 @@
+[NETWORK]
+server_port = {{ dst_master_port }}
+server_intention = {{ dst_cluster_intention }}
+
+[SHARD]
+is_master = {{ 'true' if master_world_settings.is_master else 'false' }}
+name = {{ master_world_settings.name }}
+
+[ACCOUNT]
+encode_user_path = true
+
+[STEAM]
+master_server_port = {{ dst_steam_query_port }}
+authentication_port = {{ dst_steam_query_port | int + 1 }}
+
+[GAMEPLAY]
+max_players = {{ cluster_max_players }}

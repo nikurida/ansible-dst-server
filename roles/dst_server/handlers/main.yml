@@ -1,0 +1,10 @@
+- name: Fix permissions for SteamCMD
+  file:
+    path: "{{ steamcmd_dir }}"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    recurse: true
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: true

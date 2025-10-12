@@ -1,0 +1,17 @@
+[Unit]
+Description=DST Caves Shard
+After=network.target
+
+[Service]
+Type=simple
+User={{ dst_user }}
+WorkingDirectory={{ dst_install_dir }}
+Environment=LD_LIBRARY_PATH={{ dst_install_dir }}/bin/lib32
+ExecStart={{ dst_install_dir }}/bin/dontstarve_dedicated_server_nullrenderer \
+  -cluster "{{ dst_cluster_name }}" \
+  -shard Caves
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,47 @@
+dst_user: dst
+dst_home: /opt/dst
+steamcmd_dir: /opt/steamcmd
+dst_install_dir: "{{ dst_home }}/server"
+
+dst_cluster_name: "AnsibleCluster"
+dst_cluster_description: "DST Server managed by Ansible"
+dst_cluster_intention: cooperative
+dst_cluster_password: ""
+
+dst_token: "{{ vault_dst_token }}"
+
+dst_master_port: 10999
+dst_caves_port: 11000
+dst_steam_query_port: 27015
+
+dst_mods:
+  - "375850593"
+  - "378160973"
+
+modoverrides_master: |
+  {
+    "workshop-375850593": { "enabled": true },
+    "workshop-378160973": { "enabled": true }
+  }
+
+modoverrides_caves: |
+  {
+    "workshop-375850593": { "enabled": true },
+    "workshop-378160973": { "enabled": true }
+  }
+
+cluster_pvp: false
+cluster_max_players: 8
+cluster_lan_only: false
+cluster_offline: false
+whitelist_slots: 0
+
+master_world_settings:
+  is_master: true
+  name: "Master"
+
+caves_world_settings:
+  is_master: false
+  name: "Caves"
+
+enable_ufw: true
