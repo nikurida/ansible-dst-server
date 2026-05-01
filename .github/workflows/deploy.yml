@@ -38,7 +38,7 @@ jobs:
       - name: Add host to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -T 10 -H "${ANSIBLE_HOST}" >> ~/.ssh/known_hosts
+          ssh-keyscan -T 30 -H "${ANSIBLE_HOST}" >> ~/.ssh/known_hosts || true
 
       - name: Write inventory.ini
         run: |
@@ -53,6 +53,8 @@ jobs:
           chmod 600 .vault_pass.txt
 
       - name: Dry-run (check mode)
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "false"
         run: |
           ansible-playbook -i inventory.ini site.yml \
             --vault-password-file .vault_pass.txt \
@@ -89,7 +91,7 @@ jobs:
       - name: Add host to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -T 10 -H "${ANSIBLE_HOST}" >> ~/.ssh/known_hosts
+          ssh-keyscan -T 30 -H "${ANSIBLE_HOST}" >> ~/.ssh/known_hosts || true
 
       - name: Write inventory.ini
         run: |
@@ -104,6 +106,8 @@ jobs:
           chmod 600 .vault_pass.txt
 
       - name: Apply (run Ansible)
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "false"
         run: |
           ansible-playbook -i inventory.ini site.yml \
             --vault-password-file .vault_pass.txt \
