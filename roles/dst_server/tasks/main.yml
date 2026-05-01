@@ -206,6 +206,7 @@
   loop:
     - dst-master.service
     - dst-caves.service
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Configure UFW firewall
   when: enable_ufw
