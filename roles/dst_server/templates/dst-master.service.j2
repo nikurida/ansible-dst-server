@@ -6,12 +6,14 @@ After=network.target
 Type=simple
 User={{ dst_user }}
 WorkingDirectory={{ dst_install_dir }}
-Environment=LD_LIBRARY_PATH={{ dst_install_dir }}/bin/lib32
-ExecStart={{ dst_install_dir }}/bin/dontstarve_dedicated_server_nullrenderer \
+Environment=LD_LIBRARY_PATH={{ dst_install_dir }}/bin64
+ExecStart={{ dst_install_dir }}/bin64/dontstarve_dedicated_server_nullrenderer_x64 \
+  -persistent_storage_root {{ dst_home }} \
+  -conf_dir .klei \
   -cluster "{{ dst_cluster_name }}" \
   -shard Master
-Restart=always
-RestartSec=5
+Restart=on-failure
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target

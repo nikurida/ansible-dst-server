@@ -18,7 +18,7 @@ console_enabled = true
 
 [SHARD]
 shard_enabled = true
-bind_ip = 0.0.0.0
+bind_ip = 127.0.0.1
 master_ip = 127.0.0.1
-master_port = 10888
-cluster_key = defaultsecret
+master_port = {{ dst_shard_master_port }}
+cluster_key = {{ dst_cluster_key }}

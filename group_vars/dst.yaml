@@ -3,45 +3,48 @@ dst_home: /opt/dst
 steamcmd_dir: /opt/steamcmd
 dst_install_dir: "{{ dst_home }}/server"
 
-dst_cluster_name: "AnsibleCluster"
-dst_cluster_description: "DST Server managed by Ansible"
+dst_cluster_name: "NOFEAR"
+dst_cluster_description: "No Fear. No Mercy. Just Survive."
 dst_cluster_intention: cooperative
-dst_cluster_password: ""
+dst_cluster_password: "{{ vault_dst_password }}"
+dst_cluster_key: "{{ vault_dst_cluster_key }}"
 
 dst_token: "{{ vault_dst_token }}"
 
 dst_master_port: 10999
 dst_caves_port: 11000
-dst_steam_query_port: 27015
+dst_steam_master_port: 27016
+dst_steam_auth_port: 8766
+dst_caves_steam_master_port: 27017
+dst_caves_steam_auth_port: 8767
+dst_shard_master_port: 10998
 
 dst_mods:
   - "375850593"
   - "378160973"
+  - "367546858"
 
 modoverrides_master: |
-  {
-    "workshop-375850593": { "enabled": true },
-    "workshop-378160973": { "enabled": true }
+  return {
+    ["workshop-375850593"] = { configuration_options = {}, enabled = true },
+    ["workshop-378160973"] = { configuration_options = {}, enabled = true },
+    ["workshop-367546858"] = { configuration_options = {}, enabled = true },
   }
 
 modoverrides_caves: |
-  {
-    "workshop-375850593": { "enabled": true },
-    "workshop-378160973": { "enabled": true }
+  return {
+    ["workshop-375850593"] = { configuration_options = {}, enabled = true },
+    ["workshop-378160973"] = { configuration_options = {}, enabled = true },
+    ["workshop-367546858"] = { configuration_options = {}, enabled = true },
   }
 
 cluster_pvp: false
-cluster_max_players: 8
+cluster_max_players: 6
 cluster_lan_only: false
 cluster_offline: false
 whitelist_slots: 0
 
-master_world_settings:
-  is_master: true
-  name: "Master"
-
-caves_world_settings:
-  is_master: false
-  name: "Caves"
+master_world_preset: "SURVIVAL_TOGETHER"
+caves_world_preset: "DST_CAVE"
 
 enable_ufw: true

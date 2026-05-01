@@ -1,14 +1,8 @@
-- name: Enable multiverse repository and update APT
-  apt_repository:
-    repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} multiverse"
-    state: present
-  register: repo_added
-
-- name: Update and upgrade system packages
+- name: Update and upgrade all packages (including kernel)
   apt:
     update_cache: true
-    upgrade: dist
-  when: repo_added is changed or true
+    upgrade: full
+    autoremove: true
 
 - name: Install dependencies
   apt:
@@ -20,9 +14,37 @@
       - ca-certificates
       - ufw
       - tmux
+      - needrestart
+      - unattended-upgrades
     state: present
 
-- name: Create dst user and directories
+- name: Enable automatic security updates
+  copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+    mode: "0644"
+
+- name: Reboot if kernel was updated
+  reboot:
+    reboot_timeout: 120
+    msg: "Rebooting after kernel update"
+  when: ansible_facts['kernel'] is defined
+  ignore_errors: true
+  register: reboot_result
+
+- name: Check if reboot is required
+  stat:
+    path: /var/run/reboot-required
+  register: reboot_required
+
+- name: Reboot if required
+  reboot:
+    reboot_timeout: 120
+  when: reboot_required.stat.exists
+
+- name: Create dst user
   user:
     name: "{{ dst_user }}"
     home: "{{ dst_home }}"
@@ -51,20 +73,26 @@
     src: /tmp/steamcmd_linux.tar.gz
     dest: "{{ steamcmd_dir }}"
     remote_src: true
-  notify: Fix permissions for SteamCMD
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
 
 - name: Install/Update DST dedicated server (App ID 343050)
   become_user: "{{ dst_user }}"
   shell: |
-    "{{ steamcmd_dir }}/steamcmd.sh" +login anonymous +force_install_dir "{{ dst_install_dir }}" +app_update 343050 validate +quit
+    "{{ steamcmd_dir }}/steamcmd.sh" \
+      +login anonymous \
+      +force_install_dir "{{ dst_install_dir }}" \
+      +app_update 343050 validate \
+      +quit
   args:
-    creates: "{{ dst_install_dir }}/bin"
+    creates: "{{ dst_install_dir }}/bin64"
 
 - name: Create Klei cluster structure
-  become_user: "{{ dst_user }}"
   file:
-    path: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/{{ item }}"
+    path: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/{{ item }}"
     state: directory
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
     mode: "0755"
   loop:
     - Master
@@ -73,7 +101,7 @@
 - name: Write cluster token
   copy:
     content: "{{ dst_token | trim }}"
-    dest: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/cluster_token.txt"
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/cluster_token.txt"
     owner: "{{ dst_user }}"
     group: "{{ dst_user }}"
     mode: "0600"
@@ -81,7 +109,7 @@
 - name: Generate cluster.ini
   template:
     src: cluster.ini.j2
-    dest: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/cluster.ini"
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/cluster.ini"
     owner: "{{ dst_user }}"
     group: "{{ dst_user }}"
     mode: "0644"
@@ -89,7 +117,7 @@
 - name: Generate server.ini (Master)
   template:
     src: server_master.ini.j2
-    dest: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Master/server.ini"
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Master/server.ini"
     owner: "{{ dst_user }}"
     group: "{{ dst_user }}"
     mode: "0644"
@@ -97,15 +125,43 @@
 - name: Generate server.ini (Caves)
   template:
     src: server_caves.ini.j2
-    dest: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Caves/server.ini"
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Caves/server.ini"
     owner: "{{ dst_user }}"
     group: "{{ dst_user }}"
     mode: "0644"
 
-- name: Create dedicated_server_mods_setup.lua
+- name: Generate worldgenoverride.lua (Master)
+  template:
+    src: worldgenoverride.lua.j2
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Master/worldgenoverride.lua"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+  vars:
+    world_preset: "{{ master_world_preset }}"
+
+- name: Generate worldgenoverride.lua (Caves)
+  template:
+    src: worldgenoverride.lua.j2
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Caves/worldgenoverride.lua"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+  vars:
+    world_preset: "{{ caves_world_preset }}"
+
+- name: Create mods directory
+  file:
+    path: "{{ dst_install_dir }}/mods"
+    state: directory
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0755"
+
+- name: Deploy dedicated_server_mods_setup.lua
   template:
     src: dedicated_server_mods_setup.lua.j2
-    dest: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/dedicated_server_mods_setup.lua"
+    dest: "{{ dst_install_dir }}/mods/dedicated_server_mods_setup.lua"
     owner: "{{ dst_user }}"
     group: "{{ dst_user }}"
     mode: "0644"
@@ -113,7 +169,7 @@
 - name: Create modoverrides.lua (Master)
   template:
     src: modoverrides.lua.j2
-    dest: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Master/modoverrides.lua"
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Master/modoverrides.lua"
     owner: "{{ dst_user }}"
     group: "{{ dst_user }}"
     mode: "0644"
@@ -123,7 +179,7 @@
 - name: Create modoverrides.lua (Caves)
   template:
     src: modoverrides.lua.j2
-    dest: "/home/{{ dst_user }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Caves/modoverrides.lua"
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Caves/modoverrides.lua"
     owner: "{{ dst_user }}"
     group: "{{ dst_user }}"
     mode: "0644"
@@ -160,12 +216,21 @@
       ufw:
         rule: allow
         name: OpenSSH
-    - name: Allow DST UDP ports
+    - name: Allow DST master UDP port
+      ufw:
+        rule: allow
+        proto: udp
+        port: "{{ dst_master_port }}"
+    - name: Allow DST caves UDP port
+      ufw:
+        rule: allow
+        proto: udp
+        port: "{{ dst_caves_port }}"
+    - name: Allow DST steam master ports
       ufw:
         rule: allow
         proto: udp
         port: "{{ item }}"
       loop:
-        - "{{ dst_master_port }}"
-        - "{{ dst_caves_port }}"
-        - "{{ dst_steam_query_port }}"
+        - "{{ dst_steam_master_port }}"
+        - "{{ dst_caves_steam_master_port }}"
