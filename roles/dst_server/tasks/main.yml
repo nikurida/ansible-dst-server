@@ -75,6 +75,7 @@
     remote_src: true
     owner: "{{ dst_user }}"
     group: "{{ dst_user }}"
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Install/Update DST dedicated server (App ID 343050)
   become_user: "{{ dst_user }}"
@@ -85,7 +86,8 @@
       +app_update 343050 validate \
       +quit
   args:
-    creates: "{{ dst_install_dir }}/bin64"
+    creates: "{{ dst_install_dir }}/bin"
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Create Klei cluster structure
   file:
