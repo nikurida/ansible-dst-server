@@ -26,6 +26,15 @@
       APT::Periodic::Unattended-Upgrade "1";
     mode: "0644"
 
+- name: Configure sshd for CI/CD compatibility
+  blockinfile:
+    path: /etc/ssh/sshd_config
+    marker: "# {mark} ANSIBLE MANAGED - SSH hardening"
+    block: |
+      PerSourcePenalties no
+      MaxAuthTries 3
+  notify: Reload sshd
+
 - name: Reboot if kernel was updated
   reboot:
     reboot_timeout: 120

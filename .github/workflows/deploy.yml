@@ -16,6 +16,7 @@ jobs:
     env:
       ANSIBLE_HOST: ${{ secrets.ANSIBLE_HOST }}
       ANSIBLE_USER: ${{ secrets.ANSIBLE_USER }}
+      ANSIBLE_HOST_KEY_CHECKING: "false"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,15 +31,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install ansible
 
-      - name: Start SSH agent and add key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add host to known_hosts
+      - name: Write SSH private key
+        env:
+          DEPLOY_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -T 30 -H "${ANSIBLE_HOST}" >> ~/.ssh/known_hosts || true
+          echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Test SSH connection
+        run: |
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+            -i ~/.ssh/deploy_key \
+            "${ANSIBLE_USER}@${ANSIBLE_HOST}" 'echo "SSH OK: $(hostname)"'
 
       - name: Write inventory.ini
         run: |
@@ -53,11 +58,10 @@ jobs:
           chmod 600 .vault_pass.txt
 
       - name: Dry-run (check mode)
-        env:
-          ANSIBLE_HOST_KEY_CHECKING: "false"
         run: |
           ansible-playbook -i inventory.ini site.yml \
             --vault-password-file .vault_pass.txt \
+            --private-key ~/.ssh/deploy_key \
             --check --diff \
             -e "ansible_python_interpreter=/usr/bin/python3"
 
@@ -69,6 +73,7 @@ jobs:
     env:
       ANSIBLE_HOST: ${{ secrets.ANSIBLE_HOST }}
       ANSIBLE_USER: ${{ secrets.ANSIBLE_USER }}
+      ANSIBLE_HOST_KEY_CHECKING: "false"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -83,15 +88,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install ansible
 
-      - name: Start SSH agent and add key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add host to known_hosts
+      - name: Write SSH private key
+        env:
+          DEPLOY_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -T 30 -H "${ANSIBLE_HOST}" >> ~/.ssh/known_hosts || true
+          echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Test SSH connection
+        run: |
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+            -i ~/.ssh/deploy_key \
+            "${ANSIBLE_USER}@${ANSIBLE_HOST}" 'echo "SSH OK: $(hostname)"'
 
       - name: Write inventory.ini
         run: |
@@ -106,9 +115,8 @@ jobs:
           chmod 600 .vault_pass.txt
 
       - name: Apply (run Ansible)
-        env:
-          ANSIBLE_HOST_KEY_CHECKING: "false"
         run: |
           ansible-playbook -i inventory.ini site.yml \
             --vault-password-file .vault_pass.txt \
+            --private-key ~/.ssh/deploy_key \
             -e "ansible_python_interpreter=/usr/bin/python3"
