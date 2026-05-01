@@ -90,8 +90,8 @@
   become_user: "{{ dst_user }}"
   shell: |
     "{{ steamcmd_dir }}/steamcmd.sh" \
-      +login anonymous \
       +force_install_dir "{{ dst_install_dir }}" \
+      +login anonymous \
       +app_update 343050 validate \
       +quit
   args:
