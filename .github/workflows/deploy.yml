@@ -122,3 +122,17 @@ jobs:
             --vault-password-file .vault_pass.txt \
             --private-key ~/.ssh/deploy_key \
             -e "ansible_python_interpreter=/usr/bin/python3"
+
+      - name: Health check
+        run: |
+          echo "Waiting 60s for shards to initialise..."
+          sleep 60
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key \
+            "${ANSIBLE_USER}@${ANSIBLE_HOST}" \
+            'set -e
+            for shard in dst-master.service dst-caves.service; do
+              state=$(systemctl is-active "$shard")
+              echo "$shard: $state"
+              [ "$state" = "active" ] || { echo "FAIL: $shard is not active"; exit 1; }
+            done
+            echo "Both shards healthy"'
