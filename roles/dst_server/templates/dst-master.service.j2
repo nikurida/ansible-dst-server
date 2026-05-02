@@ -5,11 +5,11 @@ After=network.target
 [Service]
 Type=simple
 User={{ dst_user }}
-WorkingDirectory={{ dst_install_dir }}
+WorkingDirectory={{ dst_install_dir }}/bin64
 Environment=LD_LIBRARY_PATH={{ dst_install_dir }}/bin64
 ExecStart={{ dst_install_dir }}/bin64/dontstarve_dedicated_server_nullrenderer_x64 \
   -persistent_storage_root {{ dst_home }} \
-  -conf_dir .klei \
+  -conf_dir .klei/DoNotStarveTogether \
   -cluster "{{ dst_cluster_name }}" \
   -shard Master
 Restart=on-failure
