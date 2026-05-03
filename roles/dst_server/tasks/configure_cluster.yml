@@ -1,0 +1,104 @@
+- name: "{{ cluster.name }} | Create Klei cluster directories"
+  file:
+    path: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ cluster.name }}/{{ item }}"
+    state: directory
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0755"
+  loop:
+    - Master
+    - Caves
+
+- name: "{{ cluster.name }} | Write cluster token"
+  copy:
+    content: "{{ cluster.token | trim }}"
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ cluster.name }}/cluster_token.txt"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0600"
+
+- name: "{{ cluster.name }} | Generate cluster.ini"
+  template:
+    src: cluster.ini.j2
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ cluster.name }}/cluster.ini"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+
+- name: "{{ cluster.name }} | Generate server.ini (Master)"
+  template:
+    src: server_master.ini.j2
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ cluster.name }}/Master/server.ini"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+
+- name: "{{ cluster.name }} | Generate server.ini (Caves)"
+  template:
+    src: server_caves.ini.j2
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ cluster.name }}/Caves/server.ini"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+
+- name: "{{ cluster.name }} | Generate worldgenoverride.lua (Master)"
+  template:
+    src: worldgenoverride.lua.j2
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ cluster.name }}/Master/worldgenoverride.lua"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+  vars:
+    world_preset: "{{ cluster.master_world_preset }}"
+    world_overrides: "{{ cluster.master_world_overrides }}"
+
+- name: "{{ cluster.name }} | Generate worldgenoverride.lua (Caves)"
+  template:
+    src: worldgenoverride.lua.j2
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ cluster.name }}/Caves/worldgenoverride.lua"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+  vars:
+    world_preset: "{{ cluster.caves_world_preset }}"
+    world_overrides: "{{ cluster.caves_world_overrides }}"
+
+- name: "{{ cluster.name }} | Generate modoverrides.lua (Master)"
+  template:
+    src: modoverrides.lua.j2
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ cluster.name }}/Master/modoverrides.lua"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+  vars:
+    modoverrides_body: "{{ cluster.modoverrides_master }}"
+
+- name: "{{ cluster.name }} | Generate modoverrides.lua (Caves)"
+  template:
+    src: modoverrides.lua.j2
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ cluster.name }}/Caves/modoverrides.lua"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+  vars:
+    modoverrides_body: "{{ cluster.modoverrides_caves }}"
+
+- name: "{{ cluster.name }} | Deploy systemd service files"
+  template:
+    src: "{{ item.src }}"
+    dest: "/etc/systemd/system/{{ item.dest }}"
+    mode: "0644"
+  loop:
+    - { src: "dst-master.service.j2", dest: "dst-{{ cluster.name | lower }}-master.service" }
+    - { src: "dst-caves.service.j2",  dest: "dst-{{ cluster.name | lower }}-caves.service" }
+  notify: Reload systemd
+
+- name: "{{ cluster.name }} | Enable and start DST services"
+  systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - "dst-{{ cluster.name | lower }}-master.service"
+    - "dst-{{ cluster.name | lower }}-caves.service"
+  ignore_errors: "{{ ansible_check_mode }}"

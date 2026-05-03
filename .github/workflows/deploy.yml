@@ -137,12 +137,12 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key \
             "${ANSIBLE_USER}@${ANSIBLE_HOST}" \
             'set -e
-            for shard in dst-master.service dst-caves.service; do
+            for shard in dst-nofear-master dst-nofear-caves dst-jaguaras-master dst-jaguaras-caves; do
               state=$(systemctl is-active "$shard")
               echo "$shard: $state"
               [ "$state" = "active" ] || { echo "FAIL: $shard is not active"; exit 1; }
             done
-            echo "Both shards healthy"'
+            echo "All shards healthy"'
 
   reset:
     name: Reset world
@@ -166,8 +166,10 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key \
             "${ANSIBLE_USER}@${ANSIBLE_HOST}" \
             'set -e
-            systemctl stop dst-master dst-caves
-            rm -rf /opt/dst/.klei/DoNotStarveTogether/NOFEAR/Master/save
-            rm -rf /opt/dst/.klei/DoNotStarveTogether/NOFEAR/Caves/save
-            systemctl start dst-master dst-caves
-            echo "World reset complete"'
+            systemctl stop dst-nofear-master dst-nofear-caves dst-jaguaras-master dst-jaguaras-caves
+            for cluster in NOFEAR JAGUARAS; do
+              rm -rf /opt/dst/.klei/DoNotStarveTogether/$cluster/Master/save
+              rm -rf /opt/dst/.klei/DoNotStarveTogether/$cluster/Caves/save
+            done
+            systemctl start dst-nofear-master dst-nofear-caves dst-jaguaras-master dst-jaguaras-caves
+            echo "World reset complete for all clusters"'

@@ -95,73 +95,8 @@
       +app_update 343050 validate \
       +quit
   args:
-    creates: "{{ dst_install_dir }}/bin"
+    creates: "{{ dst_install_dir }}/bin64"
   ignore_errors: "{{ ansible_check_mode }}"
-
-- name: Create Klei cluster structure
-  file:
-    path: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/{{ item }}"
-    state: directory
-    owner: "{{ dst_user }}"
-    group: "{{ dst_user }}"
-    mode: "0755"
-  loop:
-    - Master
-    - Caves
-
-- name: Write cluster token
-  copy:
-    content: "{{ dst_token | trim }}"
-    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/cluster_token.txt"
-    owner: "{{ dst_user }}"
-    group: "{{ dst_user }}"
-    mode: "0600"
-
-- name: Generate cluster.ini
-  template:
-    src: cluster.ini.j2
-    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/cluster.ini"
-    owner: "{{ dst_user }}"
-    group: "{{ dst_user }}"
-    mode: "0644"
-
-- name: Generate server.ini (Master)
-  template:
-    src: server_master.ini.j2
-    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Master/server.ini"
-    owner: "{{ dst_user }}"
-    group: "{{ dst_user }}"
-    mode: "0644"
-
-- name: Generate server.ini (Caves)
-  template:
-    src: server_caves.ini.j2
-    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Caves/server.ini"
-    owner: "{{ dst_user }}"
-    group: "{{ dst_user }}"
-    mode: "0644"
-
-- name: Generate worldgenoverride.lua (Master)
-  template:
-    src: worldgenoverride.lua.j2
-    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Master/worldgenoverride.lua"
-    owner: "{{ dst_user }}"
-    group: "{{ dst_user }}"
-    mode: "0644"
-  vars:
-    world_preset: "{{ master_world_preset }}"
-    world_overrides: "{{ master_world_overrides }}"
-
-- name: Generate worldgenoverride.lua (Caves)
-  template:
-    src: worldgenoverride.lua.j2
-    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Caves/worldgenoverride.lua"
-    owner: "{{ dst_user }}"
-    group: "{{ dst_user }}"
-    mode: "0644"
-  vars:
-    world_preset: "{{ caves_world_preset }}"
-    world_overrides: "{{ caves_world_overrides }}"
 
 - name: Create mods directory
   file:
@@ -179,45 +114,31 @@
     group: "{{ dst_user }}"
     mode: "0644"
 
-- name: Create modoverrides.lua (Master)
-  template:
-    src: modoverrides.lua.j2
-    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Master/modoverrides.lua"
-    owner: "{{ dst_user }}"
-    group: "{{ dst_user }}"
-    mode: "0644"
-  vars:
-    modoverrides_body: "{{ modoverrides_master }}"
-
-- name: Create modoverrides.lua (Caves)
-  template:
-    src: modoverrides.lua.j2
-    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ dst_cluster_name }}/Caves/modoverrides.lua"
-    owner: "{{ dst_user }}"
-    group: "{{ dst_user }}"
-    mode: "0644"
-  vars:
-    modoverrides_body: "{{ modoverrides_caves }}"
-
-- name: Deploy systemd service files
-  template:
-    src: "{{ item.src }}"
-    dest: "/etc/systemd/system/{{ item.dest }}"
-    mode: "0644"
-  loop:
-    - { src: "dst-master.service.j2", dest: "dst-master.service" }
-    - { src: "dst-caves.service.j2",  dest: "dst-caves.service" }
-  notify: Reload systemd
-
-- name: Enable and start DST services
+- name: Stop and disable legacy single-cluster service names
   systemd:
     name: "{{ item }}"
-    enabled: true
-    state: started
+    enabled: false
+    state: stopped
   loop:
     - dst-master.service
     - dst-caves.service
-  ignore_errors: "{{ ansible_check_mode }}"
+  ignore_errors: true
+
+- name: Remove legacy systemd service files
+  file:
+    path: "/etc/systemd/system/{{ item }}"
+    state: absent
+  loop:
+    - dst-master.service
+    - dst-caves.service
+  notify: Reload systemd
+
+- name: Configure clusters
+  include_tasks: configure_cluster.yml
+  loop: "{{ dst_clusters }}"
+  loop_control:
+    loop_var: cluster
+    label: "{{ cluster.name }}"
 
 - name: Configure UFW firewall
   when: enable_ufw
@@ -226,25 +147,21 @@
       ufw:
         state: enabled
         policy: deny
+
     - name: Allow SSH
       ufw:
         rule: allow
         name: OpenSSH
-    - name: Allow DST master UDP port
+
+    - name: Allow DST UDP ports
       ufw:
         rule: allow
         proto: udp
-        port: "{{ dst_master_port }}"
-    - name: Allow DST caves UDP port
-      ufw:
-        rule: allow
-        proto: udp
-        port: "{{ dst_caves_port }}"
-    - name: Allow DST steam master ports
-      ufw:
-        rule: allow
-        proto: udp
-        port: "{{ item }}"
-      loop:
-        - "{{ dst_steam_master_port }}"
-        - "{{ dst_caves_steam_master_port }}"
+        port: "{{ item | string }}"
+      loop: >-
+        {{
+          dst_clusters | map(attribute='master_port') | list +
+          dst_clusters | map(attribute='caves_port') | list +
+          dst_clusters | map(attribute='steam_master_port') | list +
+          dst_clusters | map(attribute='caves_steam_master_port') | list
+        }}

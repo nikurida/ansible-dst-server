@@ -1,5 +1,5 @@
 [NETWORK]
-server_port = {{ dst_caves_port }}
+server_port = {{ cluster.caves_port }}
 
 [SHARD]
 is_master = false
@@ -9,5 +9,5 @@ name = Caves
 encode_user_path = true
 
 [STEAM]
-master_server_port = {{ dst_caves_steam_master_port }}
-authentication_port = {{ dst_caves_steam_auth_port }}
+master_server_port = {{ cluster.caves_steam_master_port }}
+authentication_port = {{ cluster.caves_steam_auth_port }}

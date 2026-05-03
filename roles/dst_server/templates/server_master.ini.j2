@@ -1,5 +1,5 @@
 [NETWORK]
-server_port = {{ dst_master_port }}
+server_port = {{ cluster.master_port }}
 
 [SHARD]
 is_master = true
@@ -9,5 +9,5 @@ name = Master
 encode_user_path = true
 
 [STEAM]
-master_server_port = {{ dst_steam_master_port }}
-authentication_port = {{ dst_steam_auth_port }}
+master_server_port = {{ cluster.steam_master_port }}
+authentication_port = {{ cluster.steam_auth_port }}

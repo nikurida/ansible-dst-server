@@ -1,14 +1,14 @@
 [GAMEPLAY]
 game_mode = survival
-max_players = {{ cluster_max_players }}
-pvp = {{ 'true' if cluster_pvp else 'false' }}
+max_players = {{ cluster.max_players }}
+pvp = {{ 'true' if cluster.pvp else 'false' }}
 pause_when_empty = true
 
 [NETWORK]
-cluster_name = {{ dst_cluster_name }}
-cluster_description = {{ dst_cluster_description }}
-cluster_intention = {{ dst_cluster_intention }}
-cluster_password = {{ dst_cluster_password }}
+cluster_name = {{ cluster.name }}
+cluster_description = {{ cluster.description }}
+cluster_intention = {{ cluster_intention }}
+cluster_password = {{ cluster.password }}
 lan_only_cluster = {{ 'true' if cluster_lan_only else 'false' }}
 offline_cluster = {{ 'true' if cluster_offline else 'false' }}
 tick_rate = 15
@@ -20,5 +20,5 @@ console_enabled = true
 shard_enabled = true
 bind_ip = 127.0.0.1
 master_ip = 127.0.0.1
-master_port = {{ dst_shard_master_port }}
-cluster_key = {{ dst_cluster_key }}
+master_port = {{ cluster.shard_master_port }}
+cluster_key = {{ cluster.cluster_key }}

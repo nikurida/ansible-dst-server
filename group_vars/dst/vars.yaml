@@ -3,22 +3,6 @@ dst_home: /opt/dst
 steamcmd_dir: /opt/steamcmd
 dst_install_dir: "{{ dst_home }}/server"
 
-dst_cluster_name: "NOFEAR"
-dst_cluster_description: "No Fear. No Mercy. Just Survive."
-dst_cluster_intention: cooperative
-dst_cluster_password: "{{ vault_dst_password }}"
-dst_cluster_key: "{{ vault_dst_cluster_key }}"
-
-dst_token: "{{ vault_dst_token }}"
-
-dst_master_port: 10999
-dst_caves_port: 11000
-dst_steam_master_port: 27016
-dst_steam_auth_port: 8766
-dst_caves_steam_master_port: 27017
-dst_caves_steam_auth_port: 8767
-dst_shard_master_port: 10998
-
 dst_mods:
   - "378160973"   # Global Positions
   - "1803285852"  # Auto Stack and Pick Up
@@ -28,7 +12,8 @@ dst_mods:
   - "375859599"   # Health Info
   - "2189004162"  # Insight (Show Me+)
 
-modoverrides_master: |
+# YAML anchors — reused across clusters to avoid repetition
+_modoverrides: &modoverrides |
   return {
     ["workshop-378160973"]  = { configuration_options = {}, enabled = true },
     ["workshop-1803285852"] = { configuration_options = {}, enabled = true },
@@ -39,33 +24,59 @@ modoverrides_master: |
     ["workshop-2189004162"] = { configuration_options = {}, enabled = true },
   }
 
-modoverrides_caves: |
-  return {
-    ["workshop-378160973"]  = { configuration_options = {}, enabled = true },
-    ["workshop-1803285852"] = { configuration_options = {}, enabled = true },
-    ["workshop-3149615843"] = { configuration_options = { TOOLS_MULT = 3, WEAPONS_MULT = 3, ARMOR_MULT = 3 }, enabled = true },
-    ["workshop-764204839"]  = { configuration_options = {}, enabled = true },
-    ["workshop-1185229307"] = { configuration_options = {}, enabled = true },
-    ["workshop-375859599"]  = { configuration_options = {}, enabled = true },
-    ["workshop-2189004162"] = { configuration_options = {}, enabled = true },
-  }
-
-cluster_pvp: false
-cluster_max_players: 6
-cluster_lan_only: false
-cluster_offline: false
-whitelist_slots: 0
-
-master_world_preset: "SURVIVAL_TOGETHER"
-caves_world_preset: "DST_CAVE"
-
-master_world_overrides: |
+_master_world_overrides: &master_world_overrides |
         portalresurection = "always",
         carrot = "often",
         berrybush = "often",
         berrybush2 = "often",
         flower = "often",
 
-caves_world_overrides: ""
+dst_clusters:
+  - name: NOFEAR
+    description: "No Fear. No Mercy. Just Survive."
+    password: "{{ vault_dst_password }}"
+    token: "{{ vault_dst_token }}"
+    cluster_key: "{{ vault_dst_cluster_key }}"
+    max_players: 6
+    pvp: false
+    master_port: 10999
+    caves_port: 11000
+    steam_master_port: 27016
+    steam_auth_port: 8766
+    caves_steam_master_port: 27017
+    caves_steam_auth_port: 8767
+    shard_master_port: 10998
+    master_world_preset: "SURVIVAL_TOGETHER"
+    caves_world_preset: "DST_CAVE"
+    master_world_overrides: *master_world_overrides
+    caves_world_overrides: ""
+    modoverrides_master: *modoverrides
+    modoverrides_caves: *modoverrides
+
+  - name: JAGUARAS
+    description: "No Fear. No Mercy. Just Survive."
+    password: "{{ vault_dst_password }}"
+    token: "{{ vault_dst_token }}"
+    cluster_key: "{{ vault_dst_cluster_key }}"
+    max_players: 6
+    pvp: false
+    master_port: 11001
+    caves_port: 11002
+    steam_master_port: 27018
+    steam_auth_port: 8768
+    caves_steam_master_port: 27019
+    caves_steam_auth_port: 8769
+    shard_master_port: 10997
+    master_world_preset: "SURVIVAL_TOGETHER"
+    caves_world_preset: "DST_CAVE"
+    master_world_overrides: *master_world_overrides
+    caves_world_overrides: ""
+    modoverrides_master: *modoverrides
+    modoverrides_caves: *modoverrides
+
+cluster_intention: cooperative
+cluster_lan_only: false
+cluster_offline: false
+whitelist_slots: 0
 
 enable_ufw: true
