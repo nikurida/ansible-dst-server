@@ -2,6 +2,13 @@ name: Deploy DST with Ansible
 
 on:
   workflow_dispatch:
+    inputs:
+      reset_world:
+        description: "Reset world (wipe save data and restart)"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
   push:
     branches: [ "main" ]
 
@@ -136,3 +143,31 @@ jobs:
               [ "$state" = "active" ] || { echo "FAIL: $shard is not active"; exit 1; }
             done
             echo "Both shards healthy"'
+
+  reset:
+    name: Reset world
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.reset_world == 'true'
+    environment: production
+    env:
+      ANSIBLE_HOST: ${{ secrets.ANSIBLE_HOST }}
+      ANSIBLE_USER: ${{ secrets.ANSIBLE_USER }}
+    steps:
+      - name: Write SSH private key
+        env:
+          DEPLOY_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Wipe save data and restart
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key \
+            "${ANSIBLE_USER}@${ANSIBLE_HOST}" \
+            'set -e
+            systemctl stop dst-master dst-caves
+            rm -rf /opt/dst/.klei/DoNotStarveTogether/NOFEAR/Master/save
+            rm -rf /opt/dst/.klei/DoNotStarveTogether/NOFEAR/Caves/save
+            systemctl start dst-master dst-caves
+            echo "World reset complete"'
