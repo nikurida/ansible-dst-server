@@ -1,5 +1,7 @@
 return {
     override_enabled = true,
     preset = "{{ world_preset }}",
-    overrides = {},
+    overrides = {
+{{ world_overrides | default('') -}}
+    },
 }

@@ -150,6 +150,7 @@
     mode: "0644"
   vars:
     world_preset: "{{ master_world_preset }}"
+    world_overrides: "{{ master_world_overrides }}"
 
 - name: Generate worldgenoverride.lua (Caves)
   template:
@@ -160,6 +161,7 @@
     mode: "0644"
   vars:
     world_preset: "{{ caves_world_preset }}"
+    world_overrides: "{{ caves_world_overrides }}"
 
 - name: Create mods directory
   file:
