@@ -35,14 +35,6 @@
       MaxAuthTries 3
   notify: Reload sshd
 
-- name: Reboot if kernel was updated
-  reboot:
-    reboot_timeout: 120
-    msg: "Rebooting after kernel update"
-  when: ansible_facts['kernel'] is defined
-  ignore_errors: true
-  register: reboot_result
-
 - name: Check if reboot is required
   stat:
     path: /var/run/reboot-required

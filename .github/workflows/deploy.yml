@@ -49,7 +49,7 @@ jobs:
 
       - name: Test SSH connection
         run: |
-          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 \
             -i ~/.ssh/deploy_key \
             "${ANSIBLE_USER}@${ANSIBLE_HOST}" 'echo "SSH OK: $(hostname)"'
 
@@ -107,7 +107,7 @@ jobs:
 
       - name: Test SSH connection
         run: |
-          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 \
             -i ~/.ssh/deploy_key \
             "${ANSIBLE_USER}@${ANSIBLE_HOST}" 'echo "SSH OK: $(hostname)"'
 
