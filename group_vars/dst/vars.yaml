@@ -26,6 +26,7 @@ _modoverrides: &modoverrides |
 
 _master_world_overrides: &master_world_overrides |
         portalresurection = "always",
+        healthpenalty = "none",
         carrot = "often",
         berrybush = "often",
         berrybush2 = "often",
