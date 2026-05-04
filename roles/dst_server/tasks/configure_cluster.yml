@@ -9,6 +9,14 @@
     - Master
     - Caves
 
+- name: "{{ cluster.name }} | Write adminlist.txt"
+  copy:
+    content: "{{ dst_admins | join('\n') }}\n"
+    dest: "{{ dst_home }}/.klei/DoNotStarveTogether/{{ cluster.name }}/adminlist.txt"
+    owner: "{{ dst_user }}"
+    group: "{{ dst_user }}"
+    mode: "0644"
+
 - name: "{{ cluster.name }} | Write cluster token"
   copy:
     content: "{{ cluster.token | trim }}"

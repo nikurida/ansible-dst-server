@@ -74,6 +74,10 @@ dst_clusters:
     modoverrides_master: *modoverrides
     modoverrides_caves: *modoverrides
 
+dst_admins:
+  - "KU_R7nZ6IfX"  # Nikurida
+  - "KU_shsGL0ks"  # dheneferchoai025
+
 cluster_intention: cooperative
 cluster_lan_only: false
 cluster_offline: false
