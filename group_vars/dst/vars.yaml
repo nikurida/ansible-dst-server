@@ -17,7 +17,7 @@ _modoverrides: &modoverrides |
   return {
     ["workshop-378160973"]  = { configuration_options = {}, enabled = true },
     ["workshop-1803285852"] = { configuration_options = {}, enabled = true },
-    ["workshop-3149615843"] = { configuration_options = { TOOLS_MULT = 3, WEAPONS_MULT = 3, ARMOR_MULT = 3 }, enabled = true },
+    ["workshop-3149615843"] = { configuration_options = { weapons = 4, armors = 4, workTools = 4, tools = 4, staves = 4, amulets = 4, gold = 4, ruins = 4, dark = 4, lunar = 4, shadow = 4, clothing = 4, saddles = 4 }, enabled = true },
     ["workshop-764204839"]  = { configuration_options = {}, enabled = true },
     ["workshop-1185229307"] = { configuration_options = {}, enabled = true },
     ["workshop-375859599"]  = { configuration_options = {}, enabled = true },
