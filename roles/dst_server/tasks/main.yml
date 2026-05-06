@@ -87,6 +87,7 @@
       +app_update 343050 validate \
       +quit
   ignore_errors: "{{ ansible_check_mode }}"
+  notify: Restart DST services
 
 - name: Create mods directory
   file:
