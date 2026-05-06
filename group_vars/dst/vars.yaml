@@ -11,6 +11,9 @@ dst_mods:
   - "1185229307"  # Epic Healthbar
   - "375859599"   # Health Info
   - "2189004162"  # Insight (Show Me+)
+  - "2281925291"  # Finder Redux
+  - "503919639"   # DST Equipment Switcher
+  - "1637709131"  # Default Dance Server-side
 
 # YAML anchors — reused across clusters to avoid repetition
 _modoverrides: &modoverrides |
@@ -22,6 +25,9 @@ _modoverrides: &modoverrides |
     ["workshop-1185229307"] = { configuration_options = {}, enabled = true },
     ["workshop-375859599"]  = { configuration_options = {}, enabled = true },
     ["workshop-2189004162"] = { configuration_options = {}, enabled = true },
+    ["workshop-2281925291"] = { configuration_options = {}, enabled = true },
+    ["workshop-503919639"]  = { configuration_options = {}, enabled = true },
+    ["workshop-1637709131"] = { configuration_options = {}, enabled = true },
   }
 
 _master_world_overrides: &master_world_overrides |

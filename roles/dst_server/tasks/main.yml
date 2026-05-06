@@ -86,8 +86,6 @@
       +login anonymous \
       +app_update 343050 validate \
       +quit
-  args:
-    creates: "{{ dst_install_dir }}/bin64"
   ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Create mods directory
