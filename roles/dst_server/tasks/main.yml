@@ -113,6 +113,8 @@
   loop:
     - dst-master.service
     - dst-caves.service
+    - dst-jaguaras-master.service
+    - dst-jaguaras-caves.service
   ignore_errors: true
 
 - name: Remove legacy systemd service files
@@ -122,6 +124,8 @@
   loop:
     - dst-master.service
     - dst-caves.service
+    - dst-jaguaras-master.service
+    - dst-jaguaras-caves.service
   notify: Reload systemd
 
 - name: Configure clusters

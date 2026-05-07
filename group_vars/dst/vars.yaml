@@ -14,6 +14,7 @@ dst_mods:
   - "2281925291"  # Finder Redux
   - "503919639"   # DST Equipment Switcher
   - "1637709131"  # Default Dance Server-side
+  - "926178831"   # Force Biomes
 
 # YAML anchors — reused across clusters to avoid repetition
 _modoverrides: &modoverrides |
@@ -28,12 +29,14 @@ _modoverrides: &modoverrides |
     ["workshop-2281925291"] = { configuration_options = {}, enabled = true },
     ["workshop-503919639"]  = { configuration_options = {}, enabled = true },
     ["workshop-1637709131"] = { configuration_options = {}, enabled = true },
+    ["workshop-926178831"]  = { configuration_options = { BEFRIENDTHEPIGS = "ON", KILLERBEES = "ON", THEHUNTERS = "ON" }, enabled = true },
   }
 
 _master_world_overrides: &master_world_overrides |
         portalresurection = "always",
         healthpenalty = "none",
         day = "longday",
+        touchstone = "always",
         carrot = "often",
         berrybush = "often",
         berrybush2 = "often",
@@ -54,27 +57,6 @@ dst_clusters:
     caves_steam_master_port: 27017
     caves_steam_auth_port: 8767
     shard_master_port: 10998
-    master_world_preset: "SURVIVAL_TOGETHER"
-    caves_world_preset: "DST_CAVE"
-    master_world_overrides: *master_world_overrides
-    caves_world_overrides: ""
-    modoverrides_master: *modoverrides
-    modoverrides_caves: *modoverrides
-
-  - name: JAGUARAS
-    description: "No Fear. No Mercy. Just Survive."
-    password: "{{ vault_dst_password }}"
-    token: "{{ vault_dst_token }}"
-    cluster_key: "{{ vault_dst_cluster_key }}"
-    max_players: 6
-    pvp: false
-    master_port: 11001
-    caves_port: 11002
-    steam_master_port: 27018
-    steam_auth_port: 8768
-    caves_steam_master_port: 27019
-    caves_steam_auth_port: 8769
-    shard_master_port: 10997
     master_world_preset: "SURVIVAL_TOGETHER"
     caves_world_preset: "DST_CAVE"
     master_world_overrides: *master_world_overrides
